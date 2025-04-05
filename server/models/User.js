@@ -24,6 +24,19 @@ const userSchema = new mongoose.Schema(
       type: String,
       default: 'user',
     },
+    sickLeaveBalance: {
+      type: Number,
+      default: 10,
+    },
+    
+    paidLeaveBalance: {
+      type: Number,
+      default: 20,
+    },
+    exceptionBalance: {
+      type: Number,
+      default: 3,
+    },
   },
   { timestamps: true }
 );
