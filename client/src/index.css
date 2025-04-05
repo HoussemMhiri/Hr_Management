@@ -1,0 +1,97 @@
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --background: 0 0% 100%;
+    --foreground: 215 25% 27%;
+
+    --card: 0 0% 100%;
+    --card-foreground: 215 25% 27%;
+
+    --popover: 0 0% 100%;
+    --popover-foreground: 215 25% 27%;
+
+    --primary: 173 87% 40%;
+    --primary-foreground: 0 0% 100%;
+
+    --secondary: 220 14% 96%;
+    --secondary-foreground: 215 25% 27%;
+
+    --muted: 220 14% 96%;
+    --muted-foreground: 215 25% 40%;
+
+    --accent: 173 87% 96%;
+    --accent-foreground: 173 87% 30%;
+
+    --destructive: 0 84.2% 60.2%;
+    --destructive-foreground: 210 40% 98%;
+
+    --border: 220 13% 91%;
+    --input: 220 13% 91%;
+    --ring: 173 87% 40%;
+
+    --radius: 0.5rem;
+
+    --sidebar-background: 173 87% 40%;
+    --sidebar-foreground: 0 0% 100%;
+    --sidebar-primary: 0 0% 100%;
+    --sidebar-primary-foreground: 173 87% 40%;
+    --sidebar-accent: 173 56% 36%;
+    --sidebar-accent-foreground: 0 0% 100%;
+    --sidebar-border: 173 56% 36%;
+    --sidebar-ring: 0 0% 100%;
+  }
+
+  .dark {
+    --background: 215 32% 12%;
+    --foreground: 210 40% 98%;
+
+    --card: 215 32% 16%;
+    --card-foreground: 210 40% 98%;
+
+    --popover: 215 32% 16%;
+    --popover-foreground: 210 40% 98%;
+
+    --primary: 173 87% 40%;
+    --primary-foreground: 0 0% 100%;
+
+    --secondary: 215 32% 20%;
+    --secondary-foreground: 210 40% 98%;
+
+    --muted: 215 32% 20%;
+    --muted-foreground: 215 20.2% 65.1%;
+
+    --accent: 173 87% 25%;
+    --accent-foreground: 210 40% 98%;
+
+    --destructive: 0 62.8% 30.6%;
+    --destructive-foreground: 210 40% 98%;
+
+    --border: 215 32% 20%;
+    --input: 215 32% 20%;
+    --ring: 173 87% 50%;
+    
+    --sidebar-background: 215 32% 18%;
+    --sidebar-foreground: 210 40% 98%;
+    --sidebar-primary: 173 87% 40%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 215 32% 25%;
+    --sidebar-accent-foreground: 210 40% 98%;
+    --sidebar-border: 215 32% 25%;
+    --sidebar-ring: 173 87% 50%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply bg-background text-foreground;
+    font-feature-settings: "rlig" 1, "calt" 1;
+  }
+}
