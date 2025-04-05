@@ -1,10 +1,9 @@
-
 import React, { createContext, useState, useContext, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { AuthContextType, User } from "@/types";
 import { users } from "@/lib/mockData";
 import { useToast } from "@/hooks/use-toast";
-
+import axios from "@/lib/axios";
 // Create the auth context
 const AuthContext = createContext<AuthContextType>({
   user: null,
@@ -17,7 +16,9 @@ const AuthContext = createContext<AuthContextType>({
 export const useAuth = () => useContext(AuthContext);
 
 // Auth provider component
-export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
+  children,
+}) => {
   const [user, setUser] = useState<User | null>(null);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const navigate = useNavigate();
@@ -41,42 +42,32 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   // Login function
   const login = async (email: string, password: string): Promise<boolean> => {
     try {
-      // In a real app, this would be an API call
-      const foundUser = users.find(
-        (u) => u.email === email && u.password === password
-      );
+      const response = await axios.post("/auth/login", {
+        email,
+        password,
+      });
 
-      if (foundUser) {
-        // Don't store password in state/localStorage
-        const { password: _, ...userWithoutPassword } = foundUser;
-        
-        setUser(foundUser);
-        setIsAuthenticated(true);
-        
-        // Store user in localStorage (don't include password in real apps)
-        localStorage.setItem("user", JSON.stringify(userWithoutPassword));
-        
-        toast({
-          title: "Login successful",
-          description: `Welcome back, ${foundUser.name}!`,
-        });
-        
-        return true;
-      } else {
-        toast({
-          title: "Login failed",
-          description: "Invalid email or password",
-          variant: "destructive",
-        });
-        return false;
-      }
-    } catch (error) {
-      console.error("Login error:", error);
+      const { user } = response.data;
+
+      setUser(user);
+      setIsAuthenticated(true);
+      localStorage.setItem("user", JSON.stringify(user));
+
       toast({
-        title: "Login error",
-        description: "An error occurred during login",
+        title: "Login successful",
+        description: `Welcome back, ${user.email}!`,
+      });
+
+      return true;
+    } catch (error: any) {
+      console.error("Login error:", error);
+
+      toast({
+        title: "Login failed",
+        description: error.response?.data?.msg || "Invalid email or password",
         variant: "destructive",
       });
+
       return false;
     }
   };
