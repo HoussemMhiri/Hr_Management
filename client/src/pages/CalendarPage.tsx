@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { useAuth } from "@/context/AuthContext";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -16,21 +15,19 @@ const CalendarPage: React.FC = () => {
   useEffect(() => {
     // Filter leaves based on user role
     let filteredLeaves: Leave[] = [];
-    
+
     if (user?.role === "admin") {
-      filteredLeaves = leaves.filter(leave => leave.status === "approved");
+      filteredLeaves = leaves.filter((leave) => leave.status === "approved");
     } else {
-      filteredLeaves = leaves.filter(
-        leave => leave.userId === user?.id
-      );
+      filteredLeaves = leaves.filter((leave) => leave.userId === user?.id);
     }
 
     // Convert leaves to calendar events
-    const calendarEvents = filteredLeaves.map(leave => {
+    const calendarEvents = filteredLeaves.map((leave) => {
       // Get user name for the leave
-      const leaveUser = users.find(u => u.id === leave.userId) as User;
+      const leaveUser = users.find((u) => u.id === leave.userId) as User;
       const userName = leaveUser ? leaveUser.name : `User ${leave.userId}`;
-      
+
       // Determine event color based on leave type
       let color;
       switch (leave.type) {
@@ -46,15 +43,16 @@ const CalendarPage: React.FC = () => {
         default:
           color = "#cbd5e1"; // Default gray
       }
-      
+
       // Add opacity based on status
       if (leave.status === "pending") {
         color = color + "80"; // 50% opacity
       }
-      
+
       return {
         id: leave.id,
-        title: user?.role === "admin" ? `${userName} - ${leave.type}` : leave.type,
+        title:
+          user?.role === "admin" ? `${userName} - ${leave.type}` : leave.type,
         start: leave.startDate,
         end: leave.endDate,
         allDay: true,
@@ -65,11 +63,11 @@ const CalendarPage: React.FC = () => {
           status: leave.status,
           type: leave.type,
           reason: leave.reason,
-          userId: leave.userId
-        }
+          userId: leave.userId,
+        },
       };
     });
-    
+
     setEvents(calendarEvents);
   }, [user]);
 
@@ -82,7 +80,9 @@ const CalendarPage: React.FC = () => {
       <Card>
         <CardHeader>
           <CardTitle className="text-lg">
-            {user?.role === "admin" ? "Team Leave Schedule" : "Your Leave Schedule"}
+            {user?.role === "admin"
+              ? "Team Leave Schedule"
+              : "Your Leave Schedule"}
           </CardTitle>
         </CardHeader>
         <CardContent>
@@ -94,7 +94,7 @@ const CalendarPage: React.FC = () => {
               headerToolbar={{
                 left: "prev,next today",
                 center: "title",
-                right: "dayGridMonth,dayGridWeek"
+                right: "dayGridMonth,dayGridWeek",
               }}
               eventClick={(info) => {
                 const { extendedProps } = info.event;
@@ -108,7 +108,7 @@ const CalendarPage: React.FC = () => {
           </div>
         </CardContent>
       </Card>
-      
+
       {/* Legend */}
       <div className="flex flex-wrap gap-4">
         <div className="flex items-center">

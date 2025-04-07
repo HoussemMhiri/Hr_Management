@@ -1,4 +1,3 @@
-
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -18,6 +17,7 @@ import SettingsPage from "./pages/AdminPages/SettingsPage";
 import UnauthorizedPage from "./pages/UnauthorizedPage";
 import NotFound from "./pages/NotFound";
 import { useAuth } from "./context/AuthContext";
+import { LeaveProvider } from "./context/LeaveContext";
 
 const queryClient = new QueryClient();
 
@@ -29,7 +29,7 @@ const AppRoutes = () => {
     <Routes>
       <Route path="/login" element={<LoginPage />} />
       <Route path="/unauthorized" element={<UnauthorizedPage />} />
-      
+
       {/* Protected routes */}
       <Route
         path="/"
@@ -51,7 +51,7 @@ const AppRoutes = () => {
           </ProtectedRoute>
         }
       />
-      
+
       {/* Admin-only routes */}
       <Route
         path="/users"
@@ -73,7 +73,7 @@ const AppRoutes = () => {
           </ProtectedRoute>
         }
       />
-      
+
       {/* Catch-all route */}
       <Route path="*" element={<NotFound />} />
     </Routes>
@@ -87,7 +87,9 @@ const App = () => (
       <Sonner />
       <BrowserRouter>
         <AuthProvider>
-          <AppRoutes />
+          <LeaveProvider>
+            <AppRoutes />
+          </LeaveProvider>
         </AuthProvider>
       </BrowserRouter>
     </TooltipProvider>

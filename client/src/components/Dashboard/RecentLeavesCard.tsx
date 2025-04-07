@@ -1,4 +1,3 @@
-
 import React from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
@@ -75,7 +74,7 @@ const RecentLeavesCard: React.FC<RecentLeavesCardProps> = ({
             <TableBody>
               {leaves.length > 0 ? (
                 leaves.slice(0, 5).map((leave) => (
-                  <TableRow key={leave.id}>
+                  <TableRow key={leave.userId}>
                     {showUser && (
                       <TableCell className="font-medium">
                         {getUserName(leave.userId)}
@@ -91,8 +90,8 @@ const RecentLeavesCard: React.FC<RecentLeavesCardProps> = ({
                 ))
               ) : (
                 <TableRow>
-                  <TableCell 
-                    colSpan={showUser ? 4 : 3} 
+                  <TableCell
+                    colSpan={showUser ? 4 : 3}
                     className="text-center text-muted-foreground"
                   >
                     No recent leave requests

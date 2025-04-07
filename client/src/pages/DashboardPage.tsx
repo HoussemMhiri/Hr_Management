@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { useAuth } from "@/context/AuthContext";
 import { leaves } from "@/lib/mockData";
 import { Button } from "@/components/ui/button";
@@ -9,19 +9,25 @@ import LeaveForm from "@/components/Dashboard/LeaveForm";
 import { Leave } from "@/types";
 import { Calendar, Clock, FileText } from "lucide-react";
 import { differenceInDays, parseISO } from "date-fns";
+import { useLeave } from "@/context/LeaveContext";
 
 const DashboardPage: React.FC = () => {
   const { user } = useAuth();
+  const { leaves } = useLeave(); // make sure `leaves` is in context
   const [isLeaveFormOpen, setIsLeaveFormOpen] = useState(false);
-  const [userLeaves, setUserLeaves] = useState<Leave[]>(
-    leaves.filter((leave) => leave.userId === user?.id)
-  );
+  const [userLeaves, setUserLeaves] = useState<Leave[]>([]);
 
-  // Filter leaves for the current user
+  useEffect(() => {
+    console.log(user);
+    if (user && leaves.length) {
+      const filtered = leaves.filter((leave) => leave.userId === user._id);
+      setUserLeaves(filtered);
+    }
+  }, [user, leaves]);
+
   const userPendingLeaves = userLeaves.filter(
     (leave) => leave.status === "pending"
   ).length;
-
   // Calculate the next leave date
   const getNextLeaveDate = () => {
     const futureLeaves = userLeaves

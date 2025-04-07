@@ -4,6 +4,7 @@ export type UserRole = "admin" | "user";
 
 export interface User {
   id: number;
+  _id?: number;
   name: string;
   email: string;
   password: string;
@@ -26,6 +27,7 @@ export interface Leave {
   status: LeaveStatus;
   reason?: string;
   comment?: string;
+  daysCount: number;
   requestDate: string;
   responseDate?: string;
 }
@@ -36,6 +38,7 @@ export interface AuthContextType {
   login: (email: string, password: string) => Promise<boolean>;
   logout: () => void;
   isAuthenticated: boolean;
+  fetchUser: () => Promise<void>;
 }
 
 // Leave balance chart data

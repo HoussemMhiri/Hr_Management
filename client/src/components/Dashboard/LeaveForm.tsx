@@ -1,29 +1,30 @@
-
 import React, { useState } from "react";
-import { 
+import {
   Dialog,
   DialogContent,
   DialogDescription,
   DialogFooter,
   DialogHeader,
-  DialogTitle 
+  DialogTitle,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { 
+import {
   Select,
   SelectContent,
   SelectGroup,
   SelectItem,
   SelectLabel,
   SelectTrigger,
-  SelectValue 
+  SelectValue,
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { differenceInBusinessDays, parseISO } from "date-fns";
 import { Leave, LeaveType, User } from "@/types";
 import { useToast } from "@/hooks/use-toast";
+import axios from "@/lib/axios";
+import { useAuth } from "@/context/AuthContext";
 
 interface LeaveFormProps {
   open: boolean;
@@ -32,63 +33,77 @@ interface LeaveFormProps {
   onSubmit: (leave: Partial<Leave>) => void;
 }
 
-const LeaveForm: React.FC<LeaveFormProps> = ({ open, onOpenChange, user, onSubmit }) => {
+const LeaveForm: React.FC<LeaveFormProps> = ({
+  open,
+  onOpenChange,
+  user,
+  onSubmit,
+}) => {
+  const { fetchUser } = useAuth();
   const [startDate, setStartDate] = useState("");
   const [endDate, setEndDate] = useState("");
   const [leaveType, setLeaveType] = useState<LeaveType>("paid");
   const [reason, setReason] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { toast } = useToast();
-  
+
   // Calculate number of days (business days only)
-  const daysCount = startDate && endDate 
-    ? differenceInBusinessDays(parseISO(endDate), parseISO(startDate)) + 1
-    : 0;
-  
+  const daysCount =
+    startDate && endDate
+      ? differenceInBusinessDays(parseISO(endDate), parseISO(startDate)) + 1
+      : 0;
+
   // Get balance for selected leave type
   const getBalance = () => {
     switch (leaveType) {
-      case "paid": return user.paidLeaveBalance;
-      case "sick": return user.sickLeaveBalance;
-      case "exception": return user.exceptionBalance;
-      default: return 0;
+      case "paid":
+        return user.paidLeaveBalance;
+      case "sick":
+        return user.sickLeaveBalance;
+      case "exception":
+        return user.exceptionBalance;
+      default:
+        return 0;
     }
   };
-  
+
   // Check if request is valid
-  const isValid = 
-    startDate && 
-    endDate && 
-    leaveType && 
-    reason.trim().length > 0 && 
-    daysCount > 0 && 
-    daysCount <= getBalance();
-  
-  const handleSubmit = () => {
+  const isValid =
+    startDate &&
+    endDate &&
+    leaveType &&
+    daysCount > 0 &&
+    daysCount <= getBalance() &&
+    (leaveType !== "exception" || reason.trim().length > 0);
+
+  const handleSubmit = async () => {
     if (!isValid) return;
-    
+
     setIsSubmitting(true);
-    
+
     // Create leave request object
     const leaveRequest: Partial<Leave> = {
-      userId: user.id,
       type: leaveType,
       startDate,
       endDate,
       reason,
-      status: "pending",
+      daysCount,
       requestDate: new Date().toISOString().split("T")[0],
     };
-    
-    // Submit the request
+
     try {
-      onSubmit(leaveRequest);
-      toast({
-        title: "Leave request submitted",
-        description: "Your leave request has been submitted for approval.",
-      });
-      resetForm();
-      onOpenChange(false);
+      const response = await axios.post("/leave", leaveRequest);
+
+      if (response.status === 201) {
+        toast({
+          title: "Leave request submitted",
+          description: "Your leave request has been submitted for approval.",
+        });
+
+        resetForm();
+        fetchUser();
+        onOpenChange(false);
+      }
     } catch (error) {
       console.error("Error submitting leave request:", error);
       toast({
@@ -100,7 +115,7 @@ const LeaveForm: React.FC<LeaveFormProps> = ({ open, onOpenChange, user, onSubmi
       setIsSubmitting(false);
     }
   };
-  
+
   // Reset form to initial state
   const resetForm = () => {
     setStartDate("");
@@ -108,7 +123,7 @@ const LeaveForm: React.FC<LeaveFormProps> = ({ open, onOpenChange, user, onSubmi
     setLeaveType("paid");
     setReason("");
   };
-  
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-[425px]">
@@ -118,7 +133,7 @@ const LeaveForm: React.FC<LeaveFormProps> = ({ open, onOpenChange, user, onSubmi
             Fill out this form to submit a leave request.
           </DialogDescription>
         </DialogHeader>
-        
+
         <div className="grid gap-4 py-4">
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
@@ -142,11 +157,11 @@ const LeaveForm: React.FC<LeaveFormProps> = ({ open, onOpenChange, user, onSubmi
               />
             </div>
           </div>
-          
+
           <div className="space-y-2">
             <Label htmlFor="leave-type">Leave Type</Label>
-            <Select 
-              value={leaveType} 
+            <Select
+              value={leaveType}
               onValueChange={(value) => setLeaveType(value as LeaveType)}
             >
               <SelectTrigger>
@@ -155,14 +170,20 @@ const LeaveForm: React.FC<LeaveFormProps> = ({ open, onOpenChange, user, onSubmi
               <SelectContent>
                 <SelectGroup>
                   <SelectLabel>Leave Types</SelectLabel>
-                  <SelectItem value="paid">Paid Leave ({user.paidLeaveBalance} days available)</SelectItem>
-                  <SelectItem value="sick">Sick Leave ({user.sickLeaveBalance} days available)</SelectItem>
-                  <SelectItem value="exception">Exception ({user.exceptionBalance} days available)</SelectItem>
+                  <SelectItem value="paid">
+                    Paid Leave ({user.paidLeaveBalance} days available)
+                  </SelectItem>
+                  <SelectItem value="sick">
+                    Sick Leave ({user.sickLeaveBalance} days available)
+                  </SelectItem>
+                  <SelectItem value="exception">
+                    Exception ({user.exceptionBalance} days available)
+                  </SelectItem>
                 </SelectGroup>
               </SelectContent>
             </Select>
           </div>
-          
+
           <div className="space-y-2">
             <Label htmlFor="reason">Reason</Label>
             <Textarea
@@ -173,16 +194,22 @@ const LeaveForm: React.FC<LeaveFormProps> = ({ open, onOpenChange, user, onSubmi
               rows={3}
             />
           </div>
-          
+
           {startDate && endDate && daysCount > 0 && (
             <div className="rounded-md bg-accent p-3">
               <p className="text-sm font-medium">
-                Duration: <span className="font-bold">{daysCount} {daysCount === 1 ? "day" : "days"}</span>
+                Duration:{" "}
+                <span className="font-bold">
+                  {daysCount} {daysCount === 1 ? "day" : "days"}
+                </span>
               </p>
               <p className="text-sm">
                 {leaveType && (
                   <>
-                    Balance after request: <span className="font-bold">{Math.max(0, getBalance() - daysCount)} days</span>
+                    Balance after request:{" "}
+                    <span className="font-bold">
+                      {Math.max(0, getBalance() - daysCount)} days
+                    </span>
                   </>
                 )}
               </p>
@@ -194,15 +221,12 @@ const LeaveForm: React.FC<LeaveFormProps> = ({ open, onOpenChange, user, onSubmi
             </div>
           )}
         </div>
-        
+
         <DialogFooter>
           <Button variant="outline" onClick={() => onOpenChange(false)}>
             Cancel
           </Button>
-          <Button 
-            onClick={handleSubmit} 
-            disabled={!isValid || isSubmitting}
-          >
+          <Button onClick={handleSubmit} disabled={!isValid || isSubmitting}>
             {isSubmitting ? "Submitting..." : "Submit Request"}
           </Button>
         </DialogFooter>

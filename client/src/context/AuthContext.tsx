@@ -10,6 +10,7 @@ const AuthContext = createContext<AuthContextType>({
   login: async () => false,
   logout: () => {},
   isAuthenticated: false,
+  fetchUser: async () => {},
 });
 
 // Custom hook to use the auth context
@@ -24,19 +25,19 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
   const navigate = useNavigate();
   const { toast } = useToast();
 
-  // Check if the user is already logged in (from localStorage)
-  useEffect(() => {
-    const storedUser = localStorage.getItem("user");
-    if (storedUser) {
-      try {
-        const parsedUser = JSON.parse(storedUser);
-        setUser(parsedUser);
-        setIsAuthenticated(true);
-      } catch (error) {
-        console.error("Failed to parse stored user:", error);
-        localStorage.removeItem("user");
-      }
+  const fetchUser = async () => {
+    try {
+      const { data } = await axios.get("/auth");
+      console.log(data);
+      setUser(data.user);
+      setIsAuthenticated(true);
+    } catch (error) {
+      console.error("Failed to fetch user from DB:", error);
+      setIsAuthenticated(false);
     }
+  };
+  useEffect(() => {
+    fetchUser();
   }, []);
 
   // Login function
@@ -90,6 +91,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
     login,
     logout,
     isAuthenticated,
+    fetchUser,
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

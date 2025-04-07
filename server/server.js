@@ -11,12 +11,15 @@ app.use(cors({
   origin: "http://localhost:8080", 
   credentials: true,
 }));
+
 app.use(express.json());
 
 const authRoutes = require("./routes/auth");
+const leavesRoutes = require("./routes/leaves");
 
 
 app.use("/api/auth", authRoutes);
+app.use("/api/leave", leavesRoutes);
 
 app.listen(PORT, (err) =>
     err
