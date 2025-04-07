@@ -73,8 +73,8 @@ const RecentLeavesCard: React.FC<RecentLeavesCardProps> = ({
             </TableHeader>
             <TableBody>
               {leaves.length > 0 ? (
-                leaves.slice(0, 5).map((leave) => (
-                  <TableRow key={leave.userId}>
+                leaves.slice(0, 5).map((leave, index) => (
+                  <TableRow key={`${leave._id}-${index}`}>
                     {showUser && (
                       <TableCell className="font-medium">
                         {getUserName(leave.userId)}

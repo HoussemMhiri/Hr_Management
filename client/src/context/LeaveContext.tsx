@@ -9,12 +9,15 @@ interface LeaveContextType {
   fetchLeaves: () => Promise<void>;
   isLoading: boolean;
   error: string | null;
+  allLeaves: Leave[];
+  fetchAllLeaves: () => Promise<void>;
 }
 
 const LeaveContext = createContext<LeaveContextType | undefined>(undefined);
 
 export const LeaveProvider = ({ children }: { children: React.ReactNode }) => {
   const [leaves, setLeaves] = useState<Leave[]>([]);
+  const [allLeaves, setAllLeaves] = useState<Leave[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -32,13 +35,40 @@ export const LeaveProvider = ({ children }: { children: React.ReactNode }) => {
       setIsLoading(false);
     }
   };
+  const fetchAllLeaves = async () => {
+    setIsLoading(true);
+    try {
+      const { data } = await axios.get("/leave/all");
+      console.log("all", data);
+      setAllLeaves(data?.leaves);
+      setError(null);
+    } catch (err: any) {
+      console.error("Failed to fetch leaves:", err);
+      setError("Failed to fetch leaves");
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   useEffect(() => {
-    fetchLeaves();
+    const fetchData = async () => {
+      await fetchLeaves();
+      await fetchAllLeaves();
+    };
+    fetchData();
   }, []);
 
   return (
-    <LeaveContext.Provider value={{ leaves, fetchLeaves, isLoading, error }}>
+    <LeaveContext.Provider
+      value={{
+        leaves,
+        fetchLeaves,
+        isLoading,
+        error,
+        allLeaves,
+        fetchAllLeaves,
+      }}
+    >
       {children}
     </LeaveContext.Provider>
   );

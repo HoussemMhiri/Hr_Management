@@ -25,6 +25,7 @@ import { Leave, LeaveType, User } from "@/types";
 import { useToast } from "@/hooks/use-toast";
 import axios from "@/lib/axios";
 import { useAuth } from "@/context/AuthContext";
+import { useLeave } from "@/context/LeaveContext";
 
 interface LeaveFormProps {
   open: boolean;
@@ -40,6 +41,7 @@ const LeaveForm: React.FC<LeaveFormProps> = ({
   onSubmit,
 }) => {
   const { fetchUser } = useAuth();
+  const { fetchLeaves } = useLeave();
   const [startDate, setStartDate] = useState("");
   const [endDate, setEndDate] = useState("");
   const [leaveType, setLeaveType] = useState<LeaveType>("paid");
@@ -102,6 +104,7 @@ const LeaveForm: React.FC<LeaveFormProps> = ({
 
         resetForm();
         fetchUser();
+        fetchLeaves();
         onOpenChange(false);
       }
     } catch (error) {

@@ -1,31 +1,33 @@
 import React, { useState, useEffect } from "react";
 import { useAuth } from "@/context/AuthContext";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { leaves, users } from "@/lib/mockData";
 import { Leave, User } from "@/types";
 import FullCalendar from "@fullcalendar/react";
 import dayGridPlugin from "@fullcalendar/daygrid";
 import interactionPlugin from "@fullcalendar/interaction";
+import { useLeave } from "@/context/LeaveContext";
 
 const CalendarPage: React.FC = () => {
-  const { user } = useAuth();
+  const { user, allUsers } = useAuth();
+  const { leaves } = useLeave();
   const [events, setEvents] = useState<any[]>([]);
 
-  // Format leaves as calendar events
   useEffect(() => {
-    // Filter leaves based on user role
     let filteredLeaves: Leave[] = [];
 
     if (user?.role === "admin") {
+      // Admin sees approved leaves of all users
       filteredLeaves = leaves.filter((leave) => leave.status === "approved");
     } else {
-      filteredLeaves = leaves.filter((leave) => leave.userId === user?.id);
+      // Regular user sees only their own approved leaves or pending ones
+      filteredLeaves = leaves.filter(
+        (leave) => leave.userId === user?._id && leave.status !== "rejected"
+      );
     }
 
     // Convert leaves to calendar events
     const calendarEvents = filteredLeaves.map((leave) => {
-      // Get user name for the leave
-      const leaveUser = users.find((u) => u.id === leave.userId) as User;
+      const leaveUser = allUsers.find((u) => u._id === leave.userId) as User;
       const userName = leaveUser ? leaveUser.name : `User ${leave.userId}`;
 
       // Determine event color based on leave type
@@ -69,7 +71,7 @@ const CalendarPage: React.FC = () => {
     });
 
     setEvents(calendarEvents);
-  }, [user]);
+  }, [user, leaves, allUsers]);
 
   return (
     <div className="space-y-6">
@@ -77,6 +79,7 @@ const CalendarPage: React.FC = () => {
         <h1 className="text-2xl font-bold">Leave Calendar</h1>
       </div>
 
+      {/* Calendar Card */}
       <Card>
         <CardHeader>
           <CardTitle className="text-lg">
@@ -86,7 +89,7 @@ const CalendarPage: React.FC = () => {
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="h-[600px]">
+          <div className="h-[600px] relative z-0">
             <FullCalendar
               plugins={[dayGridPlugin, interactionPlugin]}
               initialView="dayGridMonth"
@@ -109,23 +112,26 @@ const CalendarPage: React.FC = () => {
         </CardContent>
       </Card>
 
-      {/* Legend */}
-      <div className="flex flex-wrap gap-4">
-        <div className="flex items-center">
-          <span className="mr-2 h-3 w-3 rounded-full bg-[#14b8a6]"></span>
-          <span className="text-sm">Paid Leave</span>
-        </div>
-        <div className="flex items-center">
-          <span className="mr-2 h-3 w-3 rounded-full bg-[#6366f1]"></span>
-          <span className="text-sm">Sick Leave</span>
-        </div>
-        <div className="flex items-center">
-          <span className="mr-2 h-3 w-3 rounded-full bg-[#f59e0b]"></span>
-          <span className="text-sm">Exception</span>
-        </div>
-        <div className="flex items-center">
-          <span className="mr-2 h-3 w-3 rounded-full bg-[#cbd5e1]"></span>
-          <span className="text-sm">Pending</span>
+      {/* Legend - Moved completely outside calendar area */}
+      <div className="bg-white p-4 border rounded-md shadow-sm">
+        <h2 className="text-lg font-semibold mb-2">Legend</h2>
+        <div className="flex flex-wrap gap-6">
+          <div className="flex items-center">
+            <span className="mr-2 h-3 w-3 rounded-full bg-[#14b8a6]"></span>
+            <span className="text-sm">Paid Leave</span>
+          </div>
+          <div className="flex items-center">
+            <span className="mr-2 h-3 w-3 rounded-full bg-[#6366f1]"></span>
+            <span className="text-sm">Sick Leave</span>
+          </div>
+          <div className="flex items-center">
+            <span className="mr-2 h-3 w-3 rounded-full bg-[#f59e0b]"></span>
+            <span className="text-sm">Exception</span>
+          </div>
+          <div className="flex items-center">
+            <span className="mr-2 h-3 w-3 rounded-full bg-[#cbd5e1]"></span>
+            <span className="text-sm">Pending</span>
+          </div>
         </div>
       </div>
     </div>

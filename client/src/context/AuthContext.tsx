@@ -1,6 +1,6 @@
 import React, { createContext, useState, useContext, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { AuthContextType, User } from "@/types";
+import { AuthContextType, User, Users } from "@/types";
 import { users } from "@/lib/mockData";
 import { useToast } from "@/hooks/use-toast";
 import axios from "@/lib/axios";
@@ -11,6 +11,8 @@ const AuthContext = createContext<AuthContextType>({
   logout: () => {},
   isAuthenticated: false,
   fetchUser: async () => {},
+  allUsers: null,
+  fetchAllUsers: async () => {},
 });
 
 // Custom hook to use the auth context
@@ -21,6 +23,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
   children,
 }) => {
   const [user, setUser] = useState<User | null>(null);
+  const [allUsers, setAllUsers] = useState<Users | null>(null);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const navigate = useNavigate();
   const { toast } = useToast();
@@ -36,8 +39,20 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
       setIsAuthenticated(false);
     }
   };
+  const fetchAllUsers = async () => {
+    try {
+      const { data } = await axios.get("/auth/all");
+      console.log("allUsers", data);
+      setAllUsers(data.users);
+      setIsAuthenticated(true);
+    } catch (error) {
+      console.error("Failed to fetch user from DB:", error);
+      setIsAuthenticated(false);
+    }
+  };
   useEffect(() => {
     fetchUser();
+    fetchAllUsers();
   }, []);
 
   // Login function
@@ -92,6 +107,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
     logout,
     isAuthenticated,
     fetchUser,
+    allUsers,
+    fetchAllUsers,
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

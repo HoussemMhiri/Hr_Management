@@ -1,5 +1,4 @@
-
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { leaves, users } from "@/lib/mockData";
 import { Button } from "@/components/ui/button";
 import {
@@ -24,15 +23,20 @@ import { Calendar, CheckCircle2, Clock, Users, XCircle } from "lucide-react";
 import { format, parseISO } from "date-fns";
 import { Leave } from "@/types";
 import { useToast } from "@/hooks/use-toast";
+import { useLeave } from "@/context/LeaveContext";
+import { useAuth } from "@/context/AuthContext";
+import axios from "@/lib/axios";
 
 // Admin dashboard
 const AdminDashboardPage: React.FC = () => {
-  const [leaveRequests, setLeaveRequests] = useState<Leave[]>(leaves);
+  const { allUsers, fetchAllUsers } = useAuth();
+  const { allLeaves } = useLeave();
+  const [leaveRequests, setLeaveRequests] = useState<Leave[]>(allLeaves);
   const { toast } = useToast();
 
   // Stats calculations
-  const pendingRequests = leaveRequests.filter(
-    (leave) => leave.status === "pending"
+  const pendingRequests = leaveRequests?.filter(
+    (leave) => leave?.status === "pending"
   ).length;
 
   const approvedRequests = leaveRequests.filter(
@@ -40,17 +44,21 @@ const AdminDashboardPage: React.FC = () => {
   ).length;
 
   const todaysRequests = leaveRequests.filter(
-    (leave) => leave.requestDate === new Date().toISOString().split("T")[0]
+    (leave) =>
+      leave.requestDate.split("T")[0] === new Date().toISOString().split("T")[0]
   ).length;
 
   // Get user name by ID
-  const getUserName = (userId: number) => {
-    const user = users.find((u) => u.id === userId);
-    return user ? user.name : `User ${userId}`;
+  const getUserName = () => {
+    const user = allUsers.find((u) => u.role === "user");
+    return user ? user.name : "User not found";
   };
 
   // Handle leave request approval/rejection
-  const handleLeaveAction = (leaveId: number, status: "approved" | "rejected") => {
+  /* const handleLeaveAction = (
+    leaveId: number,
+    status: "approved" | "rejected"
+  ) => {
     setLeaveRequests(
       leaveRequests.map((leave) =>
         leave.id === leaveId
@@ -67,6 +75,47 @@ const AdminDashboardPage: React.FC = () => {
       title: `Request ${status}`,
       description: `Leave request has been ${status}.`,
     });
+  }; */
+  const handleLeaveAction = async (
+    leaveId: number,
+    status: "approved" | "rejected",
+    userId: number,
+    type: string,
+    daysCount: number
+  ) => {
+    try {
+      const response = await axios.put(`/leave/${leaveId}`, {
+        status,
+        userId,
+        type,
+        daysCount,
+      });
+
+      if (response.status === 200) {
+        setLeaveRequests(
+          leaveRequests.map((leave) =>
+            leave.id === leaveId
+              ? {
+                  ...leave,
+                  status,
+                  responseDate: new Date().toISOString().split("T")[0],
+                }
+              : leave
+          )
+        );
+        window.location.reload();
+        toast({
+          title: `Request ${status}`,
+          description: `Leave request has been ${status}.`,
+        });
+      }
+    } catch (error) {
+      console.error("Error updating leave status:", error);
+      toast({
+        title: "Error",
+        description: "There was an error updating the leave request.",
+      });
+    }
   };
 
   // Get badge for leave status
@@ -80,6 +129,18 @@ const AdminDashboardPage: React.FC = () => {
         return <Badge variant="outline">Pending</Badge>;
     }
   };
+
+  const fetchAllLeaves = async () => {
+    try {
+      const response = await axios.get("/leave/all");
+      setLeaveRequests(response.data.leaves);
+    } catch (error) {
+      console.error("Error fetching leaves:", error);
+    }
+  };
+  useEffect(() => {
+    fetchAllLeaves();
+  }, []);
 
   // Get leave type label
   const getLeaveTypeLabel = (type: string) => {
@@ -119,7 +180,7 @@ const AdminDashboardPage: React.FC = () => {
         />
         <StatsCard
           title="Total Users"
-          value={users.length}
+          value={allUsers.length}
           icon={<Users className="h-5 w-5" />}
         />
         <StatsCard
@@ -152,9 +213,9 @@ const AdminDashboardPage: React.FC = () => {
             <TableBody>
               {pendingLeaves.length > 0 ? (
                 pendingLeaves.map((leave) => (
-                  <TableRow key={leave.id}>
+                  <TableRow key={leave._id}>
                     <TableCell className="font-medium">
-                      {getUserName(leave.userId)}
+                      {getUserName()}
                     </TableCell>
                     <TableCell>{getLeaveTypeLabel(leave.type)}</TableCell>
                     <TableCell>
@@ -172,7 +233,13 @@ const AdminDashboardPage: React.FC = () => {
                           variant="outline"
                           className="h-8 border-green-500 text-green-500 hover:bg-green-50 hover:text-green-600"
                           onClick={() =>
-                            handleLeaveAction(leave.id, "approved")
+                            handleLeaveAction(
+                              leave._id,
+                              "approved",
+                              leave.userId,
+                              leave.type,
+                              leave.daysCount
+                            )
                           }
                         >
                           <CheckCircle2 className="mr-1 h-4 w-4" />
@@ -183,7 +250,13 @@ const AdminDashboardPage: React.FC = () => {
                           variant="outline"
                           className="h-8 border-red-500 text-red-500 hover:bg-red-50 hover:text-red-600"
                           onClick={() =>
-                            handleLeaveAction(leave.id, "rejected")
+                            handleLeaveAction(
+                              leave._id,
+                              "rejected",
+                              leave.userId,
+                              leave.type,
+                              leave.daysCount
+                            )
                           }
                         >
                           <XCircle className="mr-1 h-4 w-4" />
@@ -224,22 +297,34 @@ const AdminDashboardPage: React.FC = () => {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {leaveRequests
-                .filter((leave) => leave.status !== "pending")
-                .slice(0, 5)
-                .map((leave) => (
-                  <TableRow key={leave.id}>
-                    <TableCell className="font-medium">
-                      {getUserName(leave.userId)}
-                    </TableCell>
-                    <TableCell>{getLeaveTypeLabel(leave.type)}</TableCell>
-                    <TableCell>
-                      {format(parseISO(leave.startDate), "MMM d")} -{" "}
-                      {format(parseISO(leave.endDate), "MMM d, yyyy")}
-                    </TableCell>
-                    <TableCell>{getStatusBadge(leave.status)}</TableCell>
-                  </TableRow>
-                ))}
+              {leaveRequests.filter((leave) => leave.status !== "pending")
+                .length === 0 ? (
+                <TableRow>
+                  <TableCell
+                    colSpan={4}
+                    className="text-center text-muted-foreground"
+                  >
+                    No recent leave history
+                  </TableCell>
+                </TableRow>
+              ) : (
+                leaveRequests
+                  .filter((leave) => leave.status !== "pending")
+                  .slice(0, 5)
+                  .map((leave) => (
+                    <TableRow key={leave._id}>
+                      <TableCell className="font-medium">
+                        {getUserName()}
+                      </TableCell>
+                      <TableCell>{getLeaveTypeLabel(leave.type)}</TableCell>
+                      <TableCell>
+                        {format(parseISO(leave.startDate), "MMM d")} -{" "}
+                        {format(parseISO(leave.endDate), "MMM d, yyyy")}
+                      </TableCell>
+                      <TableCell>{getStatusBadge(leave.status)}</TableCell>
+                    </TableRow>
+                  ))
+              )}
             </TableBody>
           </Table>
         </CardContent>

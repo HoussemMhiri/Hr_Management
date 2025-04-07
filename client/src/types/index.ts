@@ -13,7 +13,7 @@ export interface User {
   paidLeaveBalance: number;
   exceptionBalance: number;
 }
-
+export type Users = User[];
 // Leave types
 export type LeaveType = "sick" | "paid" | "exception";
 export type LeaveStatus = "pending" | "approved" | "rejected";
@@ -21,6 +21,7 @@ export type LeaveStatus = "pending" | "approved" | "rejected";
 export interface Leave {
   id: number;
   userId: number;
+  _id?:number;
   type: LeaveType;
   startDate: string;
   endDate: string;
@@ -39,6 +40,8 @@ export interface AuthContextType {
   logout: () => void;
   isAuthenticated: boolean;
   fetchUser: () => Promise<void>;
+  allUsers: Users | null;
+  fetchAllUsers: () => Promise<void>;
 }
 
 // Leave balance chart data

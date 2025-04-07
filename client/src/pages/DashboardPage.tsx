@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { useAuth } from "@/context/AuthContext";
-import { leaves } from "@/lib/mockData";
+
 import { Button } from "@/components/ui/button";
 import LeaveBalanceCard from "@/components/Dashboard/LeaveBalanceCard";
 import RecentLeavesCard from "@/components/Dashboard/RecentLeavesCard";
@@ -12,39 +12,41 @@ import { differenceInDays, parseISO } from "date-fns";
 import { useLeave } from "@/context/LeaveContext";
 
 const DashboardPage: React.FC = () => {
-  const { user } = useAuth();
-  const { leaves } = useLeave(); // make sure `leaves` is in context
+  const { user, fetchUser } = useAuth();
+  const { leaves, fetchLeaves } = useLeave();
   const [isLeaveFormOpen, setIsLeaveFormOpen] = useState(false);
   const [userLeaves, setUserLeaves] = useState<Leave[]>([]);
 
   useEffect(() => {
-    console.log(user);
     if (user && leaves.length) {
       const filtered = leaves.filter((leave) => leave.userId === user._id);
       setUserLeaves(filtered);
     }
   }, [user, leaves]);
 
+  useEffect(() => {
+    fetchUser();
+    fetchLeaves();
+  }, []);
+
   const userPendingLeaves = userLeaves.filter(
     (leave) => leave.status === "pending"
   ).length;
   // Calculate the next leave date
   const getNextLeaveDate = () => {
+    const now = new Date();
+
     const futureLeaves = userLeaves
-      .filter(
-        (leave) =>
-          leave.status === "approved" &&
-          differenceInDays(parseISO(leave.startDate), new Date()) > 0
-      )
+      .filter((leave) => {
+        const startDate = parseISO(leave.startDate);
+        return leave.status === "approved" && startDate > now;
+      })
       .sort(
         (a, b) =>
           parseISO(a.startDate).getTime() - parseISO(b.startDate).getTime()
       );
 
-    if (futureLeaves.length > 0) {
-      return parseISO(futureLeaves[0].startDate);
-    }
-    return null;
+    return futureLeaves.length > 0 ? parseISO(futureLeaves[0].startDate) : null;
   };
 
   const nextLeave = getNextLeaveDate();

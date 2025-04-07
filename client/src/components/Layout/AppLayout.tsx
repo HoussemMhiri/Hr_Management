@@ -1,9 +1,16 @@
-
 import React, { useState } from "react";
 import { useAuth } from "@/context/AuthContext";
 import { Link, useLocation } from "react-router-dom";
 import { cn } from "@/lib/utils";
-import { LogOut, Menu, User, Calendar, ClipboardList, Settings, X } from "lucide-react";
+import {
+  LogOut,
+  Menu,
+  User,
+  Calendar,
+  ClipboardList,
+  Settings,
+  X,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useIsMobile } from "@/hooks/use-mobile";
 
@@ -56,7 +63,9 @@ const AppLayout: React.FC<AppLayoutProps> = ({ children }) => {
       >
         <div>
           <div className="flex h-16 items-center justify-between px-6">
-            <h1 className="text-xl font-bold text-sidebar-foreground">Leave Manager</h1>
+            <h1 className="text-xl font-bold text-sidebar-foreground">
+              Leave Manager
+            </h1>
             {isMobile && (
               <Button
                 variant="ghost"
@@ -68,7 +77,7 @@ const AppLayout: React.FC<AppLayoutProps> = ({ children }) => {
               </Button>
             )}
           </div>
-          
+
           <nav className="mt-6 flex-1 space-y-1 px-4">
             {navigationItems
               .filter((item) => item.visible)
@@ -89,7 +98,7 @@ const AppLayout: React.FC<AppLayoutProps> = ({ children }) => {
               ))}
           </nav>
         </div>
-        
+
         <div className="border-t border-sidebar-border p-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center">
@@ -105,23 +114,25 @@ const AppLayout: React.FC<AppLayoutProps> = ({ children }) => {
                 </p>
               </div>
             </div>
-            <Button 
-              variant="ghost" 
-              size="icon" 
-              className="text-sidebar-foreground hover:text-sidebar-foreground/70"
+            <Button
+              variant="ghost"
+              size="icon"
+              className="text-sidebar-foreground"
               onClick={logout}
             >
-              <LogOut className="h-5 w-5" />
+              <LogOut className="h-5 w-5 hover:text-[#0dbfaa]" />
             </Button>
           </div>
         </div>
       </aside>
 
       {/* Main content */}
-      <div className={cn(
-        "flex-1 transition-all duration-300",
-        isSidebarOpen ? "ml-64" : "ml-0"
-      )}>
+      <div
+        className={cn(
+          "flex-1 transition-all duration-300",
+          isSidebarOpen ? "ml-64" : "ml-0"
+        )}
+      >
         {/* Header */}
         <header className="sticky top-0 z-10 bg-white shadow-sm">
           <div className="flex h-16 items-center justify-between px-6">
@@ -129,7 +140,13 @@ const AppLayout: React.FC<AppLayoutProps> = ({ children }) => {
               variant="ghost"
               size="icon"
               onClick={() => setIsSidebarOpen(!isSidebarOpen)}
-              className={cn(!isMobile && !isSidebarOpen ? "visible" : isMobile ? "visible" : "invisible")}
+              className={cn(
+                !isMobile && !isSidebarOpen
+                  ? "visible"
+                  : isMobile
+                  ? "visible"
+                  : "invisible"
+              )}
             >
               <Menu className="h-5 w-5" />
             </Button>
