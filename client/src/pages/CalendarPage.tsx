@@ -6,18 +6,27 @@ import FullCalendar from "@fullcalendar/react";
 import dayGridPlugin from "@fullcalendar/daygrid";
 import interactionPlugin from "@fullcalendar/interaction";
 import { useLeave } from "@/context/LeaveContext";
-
+import axios from "@/lib/axios";
 const CalendarPage: React.FC = () => {
   const { user, allUsers } = useAuth();
-  const { leaves } = useLeave();
+  const { leaves, allLeaves, setAllLeaves } = useLeave();
   const [events, setEvents] = useState<any[]>([]);
+
+  useEffect(() => {
+    const fetchData = async () => {
+      const { data } = await axios.get("/leave/all");
+
+      setAllLeaves(data?.leaves);
+    };
+    fetchData();
+  }, []);
 
   useEffect(() => {
     let filteredLeaves: Leave[] = [];
 
     if (user?.role === "admin") {
       // Admin sees approved leaves of all users
-      filteredLeaves = leaves.filter((leave) => leave.status === "approved");
+      filteredLeaves = allLeaves.filter((leave) => leave.status !== "rejected");
     } else {
       // Regular user sees only their own approved leaves or pending ones
       filteredLeaves = leaves.filter(

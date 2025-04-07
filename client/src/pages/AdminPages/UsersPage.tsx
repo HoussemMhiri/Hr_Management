@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect } from "react";
 /* import { users, leaves } from "@/lib/mockData"; */
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
@@ -11,11 +11,19 @@ import {
 } from "@/components/ui";
 import { useAuth } from "@/context/AuthContext";
 import { useLeave } from "@/context/LeaveContext";
-
+import axios from "@/lib/axios";
 const UsersPage: React.FC = () => {
   const { allUsers, fetchAllUsers } = useAuth();
-  const { allLeaves, fetchAllLeaves } = useLeave();
+  const { allLeaves, fetchAllLeaves, setAllLeaves } = useLeave();
 
+  useEffect(() => {
+    const fetchData = async () => {
+      const { data } = await axios.get("/leave/all");
+
+      setAllLeaves(data?.leaves);
+    };
+    fetchData();
+  }, []);
   // Get the pending leave count for each user
   const getPendingLeaveCount = (userId: number) => {
     return allLeaves.filter(

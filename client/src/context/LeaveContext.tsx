@@ -11,6 +11,7 @@ interface LeaveContextType {
   error: string | null;
   allLeaves: Leave[];
   fetchAllLeaves: () => Promise<void>;
+  setAllLeaves: React.Dispatch<React.SetStateAction<Leave[]>>;
 }
 
 const LeaveContext = createContext<LeaveContextType | undefined>(undefined);
@@ -67,6 +68,7 @@ export const LeaveProvider = ({ children }: { children: React.ReactNode }) => {
         error,
         allLeaves,
         fetchAllLeaves,
+        setAllLeaves,
       }}
     >
       {children}
