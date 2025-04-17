@@ -98,7 +98,7 @@ const CalendarPage: React.FC = () => {
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="h-[600px] relative z-0">
+        <div className="overflow-hidden">
             <FullCalendar
               plugins={[dayGridPlugin, interactionPlugin]}
               initialView="dayGridMonth"
