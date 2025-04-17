@@ -26,6 +26,15 @@ import { useToast } from "@/hooks/use-toast";
 import { useLeave } from "@/context/LeaveContext";
 import { useAuth } from "@/context/AuthContext";
 import axios from "@/lib/axios";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogFooter,
+  DialogTitle,
+  DialogDescription,
+} from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
 
 // Admin dashboard
 const AdminDashboardPage: React.FC = () => {
@@ -33,6 +42,9 @@ const AdminDashboardPage: React.FC = () => {
   const { allLeaves } = useLeave();
   const [leaveRequests, setLeaveRequests] = useState<Leave[]>(allLeaves);
   const { toast } = useToast();
+  const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [rejectionReason, setRejectionReason] = useState("");
+  const [currentLeaveId, setCurrentLeaveId] = useState<number | null>(null);
 
   // Stats calculations
   const pendingRequests = leaveRequests?.filter(
@@ -55,27 +67,6 @@ const AdminDashboardPage: React.FC = () => {
   };
 
   // Handle leave request approval/rejection
-  /* const handleLeaveAction = (
-    leaveId: number,
-    status: "approved" | "rejected"
-  ) => {
-    setLeaveRequests(
-      leaveRequests.map((leave) =>
-        leave.id === leaveId
-          ? {
-              ...leave,
-              status,
-              responseDate: new Date().toISOString().split("T")[0],
-            }
-          : leave
-      )
-    );
-
-    toast({
-      title: `Request ${status}`,
-      description: `Leave request has been ${status}.`,
-    });
-  }; */
   const handleLeaveAction = async (
     leaveId: number,
     status: "approved" | "rejected",
@@ -92,9 +83,11 @@ const AdminDashboardPage: React.FC = () => {
       });
 
       if (response.status === 200) {
+        // Update local state with the new data
+        const updatedLeave = response.data.leave;
         setLeaveRequests(
           leaveRequests.map((leave) =>
-            leave.id === leaveId
+            leave._id === leaveId
               ? {
                   ...leave,
                   status,
@@ -103,7 +96,7 @@ const AdminDashboardPage: React.FC = () => {
               : leave
           )
         );
-        window.location.reload();
+
         toast({
           title: `Request ${status}`,
           description: `Leave request has been ${status}.`,
@@ -115,6 +108,55 @@ const AdminDashboardPage: React.FC = () => {
         title: "Error",
         description: "There was an error updating the leave request.",
       });
+    }
+  };
+
+  const openDialog = (leaveId: number) => {
+    setCurrentLeaveId(leaveId);
+    setIsDialogOpen(true);
+  };
+
+  const closeDialog = () => {
+    setIsDialogOpen(false);
+    setRejectionReason("");
+    setCurrentLeaveId(null);
+  };
+
+  const handleRejectWithReason = async () => {
+    if (currentLeaveId) {
+      try {
+        const response = await axios.put(`/leave/${currentLeaveId}`, {
+          status: "rejected",
+          hrComment: rejectionReason,
+        });
+
+        if (response.status === 200) {
+          // Update local state with rejection data
+          setLeaveRequests(
+            leaveRequests.map((leave) =>
+              leave._id === currentLeaveId
+                ? {
+                    ...leave,
+                    status: "rejected",
+                    hrComment: rejectionReason,
+                    responseDate: new Date().toISOString().split("T")[0],
+                  }
+                : leave
+            )
+          );
+          closeDialog();
+          toast({
+            title: "Request Rejected",
+            description: "Leave request has been rejected.",
+          });
+        }
+      } catch (error) {
+        console.error("Error rejecting leave request:", error);
+        toast({
+          title: "Error",
+          description: "There was an error rejecting the leave request.",
+        });
+      }
     }
   };
 
@@ -249,15 +291,7 @@ const AdminDashboardPage: React.FC = () => {
                           size="sm"
                           variant="outline"
                           className="h-8 border-red-500 text-red-500 hover:bg-red-50 hover:text-red-600"
-                          onClick={() =>
-                            handleLeaveAction(
-                              leave._id,
-                              "rejected",
-                              leave.userId,
-                              leave.type,
-                              leave.daysCount
-                            )
-                          }
+                          onClick={() => openDialog(leave._id)}
                         >
                           <XCircle className="mr-1 h-4 w-4" />
                           Reject
@@ -281,6 +315,34 @@ const AdminDashboardPage: React.FC = () => {
         </CardContent>
       </Card>
 
+      {/* Rejection Reason Dialog */}
+      <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Reject Leave Request</DialogTitle>
+            <DialogDescription>
+              Please provide a reason for rejecting this leave request.
+            </DialogDescription>
+          </DialogHeader>
+          <Input
+            placeholder="Enter rejection reason"
+            value={rejectionReason}
+            onChange={(e) => setRejectionReason(e.target.value)}
+          />
+          <DialogFooter>
+            <Button variant="outline" onClick={closeDialog}>
+              Cancel
+            </Button>
+            <Button
+              className="bg-red-500 text-white hover:bg-red-600"
+              onClick={handleRejectWithReason}
+            >
+              Submit
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
       {/* Recent leave history */}
       <Card>
         <CardHeader>
@@ -294,6 +356,7 @@ const AdminDashboardPage: React.FC = () => {
                 <TableHead>Type</TableHead>
                 <TableHead>Period</TableHead>
                 <TableHead>Status</TableHead>
+                <TableHead>Rejection Notes</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -301,7 +364,7 @@ const AdminDashboardPage: React.FC = () => {
                 .length === 0 ? (
                 <TableRow>
                   <TableCell
-                    colSpan={4}
+                    colSpan={5}
                     className="text-center text-muted-foreground"
                   >
                     No recent leave history
@@ -322,6 +385,11 @@ const AdminDashboardPage: React.FC = () => {
                         {format(parseISO(leave.endDate), "MMM d, yyyy")}
                       </TableCell>
                       <TableCell>{getStatusBadge(leave.status)}</TableCell>
+                      <TableCell>
+                        {leave.status === "rejected" && leave.hrComment
+                          ? leave.hrComment
+                          : "-"}
+                      </TableCell>
                     </TableRow>
                   ))
               )}

@@ -34,7 +34,11 @@ requestDate: {
   daysCount: {
         type: Number,
         default: 0, 
-      },
+  },
+  hrComment: {
+    type: String,
+    default: "", 
+  },
 }, {
   timestamps: true,
 });

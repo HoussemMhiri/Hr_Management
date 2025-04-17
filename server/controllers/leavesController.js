@@ -55,10 +55,14 @@ const createLeave = async (req, res) => {
   const updateLeaveStatus = async (req, res) => {
     try {
       const { leaveId } = req.params;
-      const { status, userId, type, daysCount } = req.body; 
+      const { status, userId, type, daysCount, hrComment } = req.body;
   
-      if (!status || !type || !daysCount || !userId) {
-        return res.status(400).json({ msg: 'Missing required fields (status, type, daysCount, userId).' });
+      if (!status) {
+        return res.status(400).json({ msg: 'Status is required.' });
+      }
+  
+      if (status === 'approved' && (!type || !daysCount || !userId)) {
+        return res.status(400).json({ msg: 'Missing required fields for approval (type, daysCount, userId).' });
       }
   
       const leave = await Leave.findById(leaveId);
@@ -67,11 +71,16 @@ const createLeave = async (req, res) => {
       }
   
       leave.status = status;
+  
+      if (hrComment) {
+        leave.hrComment = hrComment;
+      }
+  
       await leave.save();
-      
+  
       if (status === 'approved') {
         let updateField = {};
-      
+  
         switch (type) {
           case 'sick':
             updateField.sickLeaveBalance = -daysCount;
@@ -85,7 +94,7 @@ const createLeave = async (req, res) => {
           default:
             return res.status(400).json({ msg: 'Invalid leave type.' });
         }
-      
+  
         await User.findByIdAndUpdate(userId, {
           $inc: updateField,
         });
@@ -97,6 +106,7 @@ const createLeave = async (req, res) => {
       res.status(500).json({ msg: 'Server error', error: error.message });
     }
   };
+  
   
   
 
