@@ -39,7 +39,7 @@ import { Input } from "@/components/ui/input";
 // Admin dashboard
 const AdminDashboardPage: React.FC = () => {
   const { allUsers, fetchAllUsers } = useAuth();
-  const { allLeaves } = useLeave();
+  const { allLeaves, fetchAllLeaves: fetchLeavesFromContext } = useLeave();
   const [leaveRequests, setLeaveRequests] = useState<Leave[]>(allLeaves);
   const { toast } = useToast();
   const [isDialogOpen, setIsDialogOpen] = useState(false);
@@ -97,6 +97,9 @@ const AdminDashboardPage: React.FC = () => {
           )
         );
 
+        // Fetch updated leaves for calendar
+        await fetchLeavesFromContext();
+
         toast({
           title: `Request ${status}`,
           description: `Leave request has been ${status}.`,
@@ -144,6 +147,10 @@ const AdminDashboardPage: React.FC = () => {
                 : leave
             )
           );
+
+          // Fetch updated leaves for calendar
+          await fetchLeavesFromContext();
+
           closeDialog();
           toast({
             title: "Request Rejected",
@@ -172,7 +179,8 @@ const AdminDashboardPage: React.FC = () => {
     }
   };
 
-  const fetchAllLeaves = async () => {
+  // Rename the local fetchAllLeaves function to fetchLeaveRequests
+  const fetchLeaveRequests = async () => {
     try {
       const response = await axios.get("/leave/all");
       setLeaveRequests(response.data.leaves);
@@ -180,9 +188,15 @@ const AdminDashboardPage: React.FC = () => {
       console.error("Error fetching leaves:", error);
     }
   };
+
   useEffect(() => {
-    fetchAllLeaves();
+    fetchLeaveRequests();
+    fetchLeavesFromContext();
   }, []);
+
+  useEffect(() => {
+    setLeaveRequests(allLeaves);
+  }, [allLeaves]);
 
   // Get leave type label
   const getLeaveTypeLabel = (type: string) => {

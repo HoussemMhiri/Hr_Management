@@ -31,6 +31,7 @@ export interface Leave {
   daysCount: number;
   requestDate: string;
   responseDate?: string;
+  hrComment?: string;
 }
 
 // Auth context types

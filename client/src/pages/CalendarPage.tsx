@@ -7,30 +7,30 @@ import dayGridPlugin from "@fullcalendar/daygrid";
 import interactionPlugin from "@fullcalendar/interaction";
 import { useLeave } from "@/context/LeaveContext";
 import axios from "@/lib/axios";
+
 const CalendarPage: React.FC = () => {
   const { user, allUsers } = useAuth();
-  const { leaves, allLeaves, setAllLeaves } = useLeave();
+  const { leaves, allLeaves, setAllLeaves, fetchAllLeaves } = useLeave();
   const [events, setEvents] = useState<any[]>([]);
 
   useEffect(() => {
-    const fetchData = async () => {
-      const { data } = await axios.get("/leave/all");
-
-      setAllLeaves(data?.leaves);
-    };
-    fetchData();
+    fetchAllLeaves();
   }, []);
 
   useEffect(() => {
     let filteredLeaves: Leave[] = [];
 
     if (user?.role === "admin") {
-      // Admin sees approved leaves of all users
-      filteredLeaves = allLeaves.filter((leave) => leave.status !== "rejected");
+      // Admin sees only pending and approved leaves
+      filteredLeaves = allLeaves.filter(
+        (leave) => leave.status === "pending" || leave.status === "approved"
+      );
     } else {
-      // Regular user sees only their own approved leaves or pending ones
-      filteredLeaves = leaves.filter(
-        (leave) => leave.userId === user?._id && leave.status !== "rejected"
+      // Regular user sees only their own pending and approved leaves
+      filteredLeaves = allLeaves.filter(
+        (leave) =>
+          leave.userId === user?._id &&
+          (leave.status === "pending" || leave.status === "approved")
       );
     }
 
@@ -39,31 +39,33 @@ const CalendarPage: React.FC = () => {
       const leaveUser = allUsers.find((u) => u._id === leave.userId) as User;
       const userName = leaveUser ? leaveUser.name : `User ${leave.userId}`;
 
-      // Determine event color based on leave type
+      // Determine event color based on leave type and status
       let color;
       switch (leave.type) {
         case "paid":
-          color = "#14b8a6"; // Primary color for paid leaves
+          color = "#14b8a6";
           break;
         case "sick":
-          color = "#6366f1"; // Purple for sick leaves
+          color = "#6366f1";
           break;
         case "exception":
-          color = "#f59e0b"; // Amber for exception leaves
+          color = "#f59e0b";
           break;
         default:
-          color = "#cbd5e1"; // Default gray
+          color = "#cbd5e1";
       }
 
-      // Add opacity based on status
+      // Add opacity for pending requests
       if (leave.status === "pending") {
-        color = color + "80"; // 50% opacity
+        color = color + "80";
       }
 
       return {
-        id: leave.id,
+        id: leave._id,
         title:
-          user?.role === "admin" ? `${userName} - ${leave.type}` : leave.type,
+          user?.role === "admin"
+            ? `${userName} - ${leave.type}`
+            : `${leave.type}`,
         start: leave.startDate,
         end: leave.endDate,
         allDay: true,
@@ -80,7 +82,7 @@ const CalendarPage: React.FC = () => {
     });
 
     setEvents(calendarEvents);
-  }, [user, leaves, allUsers]);
+  }, [user, leaves, allUsers, allLeaves]);
 
   return (
     <div className="space-y-6">
@@ -98,7 +100,7 @@ const CalendarPage: React.FC = () => {
           </CardTitle>
         </CardHeader>
         <CardContent>
-        <div className="overflow-hidden">
+          <div className="overflow-hidden">
             <FullCalendar
               plugins={[dayGridPlugin, interactionPlugin]}
               initialView="dayGridMonth"
